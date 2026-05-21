@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Banco Central - Core Transaccional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+    <header class="bg-blue-900 text-white p-4 shadow-lg border-b-4 border-blue-500">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-black flex items-center gap-3">
+                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-800/60 border border-blue-400/30">
+                    <svg class="w-5 h-5 text-blue-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 10.5L12 4l9 6.5"></path>
+                        <path d="M5 10.5V20h14v-9.5"></path>
+                        <path d="M9.5 20v-6h5v6"></path>
+                    </svg>
+                </span>
+                <span>BANCO CENTRAL</span>
+            </h1>
+            <div class="flex flex-wrap items-center gap-4">
+                <nav class="space-x-4 text-sm font-bold">
+                    <button data-role="usuario" onclick="showTab('cuenta')" class="hover:text-blue-300 inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 7h18"></path>
+                            <path d="M7 11h10"></path>
+                            <path d="M7 15h6"></path>
+                            <path d="M3 7l3 10h12l3-10"></path>
+                        </svg>
+                        CUENTA
+                    </button>
+                    <button data-role="usuario" onclick="showTab('movimientos')" class="hover:text-blue-300 inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 6h16"></path>
+                            <path d="M4 12h16"></path>
+                            <path d="M4 18h10"></path>
+                        </svg>
+                        MOVIMIENTOS
+                    </button>
+                    <button data-role="usuario" onclick="showTab('operaciones')" class="hover:text-blue-300 inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3v18"></path>
+                            <path d="M16 7H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6H8"></path>
+                        </svg>
+                        OPERACIONES
+                    </button>
+                    <button data-role="usuario" onclick="showTab('pagos')" class="hover:text-blue-300 inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="6" width="18" height="12" rx="2"></rect>
+                            <path d="M3 10h18"></path>
+                            <path d="M7 14h4"></path>
+                        </svg>
+                        PAGOS
+                    </button>
+                    <button data-role="admin" onclick="showTab('clientes')" class="hover:text-blue-300 inline-flex items-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M16 11a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"></path>
+                        <path d="M4 20a8 8 0 0 1 16 0"></path>
+                    </svg>
+                    CLIENTES
+                    </button>
+                    <button data-role="admin" onclick="showTab('aprobaciones')" class="hover:text-blue-300 inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M9 12l2 2 4-4"></path>
+                            <path d="M12 3a9 9 0 1 1-9 9"></path>
+                        </svg>
+                        APROBACIONES
+                    </button>
+                    <button data-role="admin" onclick="showTab('bitacora')" class="hover:text-blue-300 inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 6h16"></path>
+                            <path d="M4 12h16"></path>
+                            <path d="M4 18h10"></path>
+                        </svg>
+                        BITACORA
+                    </button>
+                </nav>
+                <div class="role-switch">
+                    <button id="role-admin" class="role-toggle" onclick="setRole('admin')">Admin</button>
+                    <button id="role-usuario" class="role-toggle" onclick="setRole('usuario')">Usuario</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6">
+        <section class="mb-8" data-role="admin">
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-widest text-slate-500">Panel Ejecutivo</p>
+                        <h2 class="text-2xl font-bold text-slate-900">Centro Operativo Banco Central</h2>
+                        <p class="mt-2 text-sm text-slate-600">Gestion integral de clientes, operaciones y pagos con control de cumplimiento y monitoreo en tiempo real.</p>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs font-semibold text-slate-600">
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700">Core Bancario</span>
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700">Operacion Segura</span>
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700">
+                            <span class="status-dot status-warn"></span>
+                            Estado no disponible
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="mb-8" data-role="admin">
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <h2 class="text-lg font-bold text-slate-900 inline-flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 3h18v6H3z"></path>
+                            <path d="M3 9h18v6H3z"></path>
+                            <path d="M3 15h18v6H3z"></path>
+                        </svg>
+                        Resumen Ejecutivo
+                    </h2>
+                    <span class="text-xs font-semibold uppercase tracking-widest text-slate-500">Gobernanza y Riesgo</span>
+                </div>
+                <div class="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Riesgo operativo</p>
+                        <div class="mt-3 flex items-center justify-between">
+                            <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full w-2/5 bg-emerald-500"></div>
+                            </div>
+                            <span class="ml-3 text-xs font-semibold text-slate-600">N/D</span>
+                        </div>
+                        <p class="mt-3 text-xs text-slate-500">Sin datos disponibles.</p>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Cumplimiento</p>
+                        <div class="mt-3 space-y-2 text-sm text-slate-700">
+                            <div class="flex items-center justify-between">
+                                <span>AML diario</span>
+                                <span class="text-slate-500 font-semibold">N/D</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>KYC mensual</span>
+                                <span class="text-slate-500 font-semibold">N/D</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>Auditoria interna</span>
+                                <span class="text-slate-500 font-semibold">N/D</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Agenda ejecutiva</p>
+                        <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                            <li class="flex items-center justify-between">
+                                <span>Revision de limites transaccionales</span>
+                                <span class="text-xs text-slate-500">--:--</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>Comite de riesgo operativo</span>
+                                <span class="text-xs text-slate-500">--:--</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>Informe de conciliacion</span>
+                                <span class="text-xs text-slate-500">--:--</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="tab-clientes" class="tab-content" data-role="admin">
+            <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-gray-800">
+                <h2 class="text-xl font-bold mb-4 inline-flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M16 11a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"></path>
+                        <path d="M4 20a8 8 0 0 1 16 0"></path>
+                    </svg>
+                    Registro de Cuentahabiente
+                </h2>
+                <form id="form-cliente" class="grid grid-cols-2 gap-4">
+                    <input type="text" id="dpi" placeholder="DPI (Requerido)" class="border p-2 rounded" required>
+                    <input type="text" id="nombre" placeholder="Nombre completo" class="border p-2 rounded" required>
+                    <input type="email" id="email" placeholder="Correo Electrónico" class="border p-2 rounded col-span-2">
+                    <button type="submit" class="bg-blue-800 text-white p-2 rounded hover:bg-blue-700 font-bold">Aperturar Cuenta</button>
+                </form>
+                <div class="mt-5 text-xs text-slate-500">
+                    Endpoint: <span class="font-semibold text-slate-700">POST</span> /api/Cuentahabientes/perfil
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-cuenta" class="tab-content hidden" data-role="usuario">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <h2 class="text-xl font-bold inline-flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 7h18"></path>
+                            <path d="M7 11h10"></path>
+                            <path d="M7 15h6"></path>
+                            <path d="M3 7l3 10h12l3-10"></path>
+                        </svg>
+                        Resumen de Cuenta
+                    </h2>
+                    <span class="text-xs font-semibold uppercase tracking-widest text-slate-500">Usuario</span>
+                </div>
+                <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Saldo disponible</p>
+                        <p class="mt-2 text-2xl font-bold text-slate-900">Q --</p>
+                        <p class="text-xs text-slate-500">Cuenta monetaria</p>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Cuenta</p>
+                        <p class="mt-2 text-lg font-semibold text-slate-900">**** ----</p>
+                        <p class="text-xs text-slate-500">Alias: --</p>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Límites</p>
+                        <p class="mt-2 text-lg font-semibold text-slate-900">Q --</p>
+                        <p class="text-xs text-slate-500">Límite diario transferencias</p>
+                    </div>
+                </div>
+                <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Estado de cuenta</p>
+                        <p class="mt-2 text-sm text-slate-700">Próximo corte: --</p>
+                        <p class="text-xs text-slate-500">Descarga disponible: N/D</p>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Alertas</p>
+                        <ul class="mt-2 space-y-2 text-sm text-slate-700">
+                            <li class="flex items-center justify-between">
+                                <span>Transferencias internacionales</span>
+                                <span class="text-slate-500 font-semibold">N/D</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>Notificaciones SMS</span>
+                                <span class="text-slate-500 font-semibold">N/D</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-movimientos" class="tab-content hidden" data-role="usuario">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <h2 class="text-xl font-bold inline-flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 6h16"></path>
+                            <path d="M4 12h16"></path>
+                            <path d="M4 18h10"></path>
+                        </svg>
+                        Movimientos Recientes
+                    </h2>
+                    <span class="text-xs font-semibold uppercase tracking-widest text-slate-500">Usuario</span>
+                </div>
+                <div class="h-64 overflow-y-auto text-sm border-t pt-2" id="movimientos-lista">
+                    <p class="text-gray-400 italic text-center">Sin movimientos recientes.</p>
+                </div>
+                <div class="mt-4 text-xs text-slate-500">
+                    Endpoint: <span class="font-semibold text-slate-700">GET</span> /api/Operaciones/movimientos/{idCuenta}
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-operaciones" class="tab-content hidden" data-role="usuario">
+            <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-bold mb-4 inline-flex items-center gap-2">
+                        <svg class="w-5 h-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3v18"></path>
+                            <path d="M16 7H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6H8"></path>
+                        </svg>
+                        Depósitos y Retiros
+                    </h2>
+                    <label class="text-xs font-semibold text-slate-500">idCuenta</label>
+                    <input type="text" id="op-cuenta" placeholder="ID Cuenta (int32)" class="border p-2 w-full mb-3">
+                    <label class="text-xs font-semibold text-slate-500">monto</label>
+                    <input type="number" id="op-monto" placeholder="Monto Q" class="border p-2 w-full mb-3">
+                    <label class="text-xs font-semibold text-slate-500">referencia</label>
+                    <input type="text" id="op-referencia" placeholder="Referencia (string)" class="border p-2 w-full mb-4">
+                    <div class="flex gap-2">
+                        <button onclick="transaccion('CREDITO')" class="flex-1 bg-emerald-600 text-white p-2 rounded font-bold">Depósito</button>
+                        <button onclick="transaccion('DEBITO')" class="flex-1 bg-rose-600 text-white p-2 rounded font-bold">Retiro</button>
+                    </div>
+                    <div class="mt-5 text-xs text-slate-500">
+                        Endpoints: <span class="font-semibold text-slate-700">POST</span> /api/Operaciones/deposito • <span class="font-semibold text-slate-700">POST</span> /api/Operaciones/retiro
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-aprobaciones" class="tab-content hidden" data-role="admin">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <h2 class="text-xl font-bold inline-flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M9 12l2 2 4-4"></path>
+                            <path d="M12 3a9 9 0 1 1-9 9"></path>
+                        </svg>
+                        Aprobaciones y Control
+                    </h2>
+                    <span class="text-xs font-semibold uppercase tracking-widest text-slate-500">Admin</span>
+                </div>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Pendientes críticas</p>
+                        <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                            <li class="flex items-center justify-between">
+                                <span>Transferencias > Q 50,000</span>
+                                <span class="text-slate-500 font-semibold">--</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>Aperturas de cuenta</span>
+                                <span class="text-slate-500 font-semibold">--</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>Ajustes de límite</span>
+                                <span class="text-slate-500 font-semibold">--</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Revisión AML/KYC</p>
+                        <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                            <li class="flex items-center justify-between">
+                                <span>Alertas AML</span>
+                                <span class="text-slate-500 font-semibold">--</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>KYC vencidos</span>
+                                <span class="text-slate-500 font-semibold">--</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>Validaciones completadas</span>
+                                <span class="text-slate-500 font-semibold">--</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-4 text-xs text-slate-500">
+                    Endpoints: <span class="font-semibold text-slate-700">GET</span> /api/Admin/aprobaciones • <span class="font-semibold text-slate-700">POST</span> /api/Admin/validar
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-bitacora" class="tab-content hidden" data-role="admin">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <h2 class="text-xl font-bold inline-flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 6h16"></path>
+                            <path d="M4 12h16"></path>
+                            <path d="M4 18h10"></path>
+                        </svg>
+                        Bitácora Transaccional Global
+                    </h2>
+                    <span class="text-xs font-semibold uppercase tracking-widest text-slate-500">Admin</span>
+                </div>
+                <div class="h-64 overflow-y-auto text-sm border-t pt-2" id="bitacora-lista">
+                    <p class="text-gray-400 italic text-center">Sin movimientos recientes.</p>
+                </div>
+                <div class="mt-4 text-xs text-slate-500">
+                    Endpoint: <span class="font-semibold text-slate-700">GET</span> /api/Bitacora/kardex/{idCuenta}
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-pagos" class="tab-content hidden" data-role="usuario">
+            <div class="bg-white p-8 rounded-xl shadow-xl max-w-2xl mx-auto border-2 border-blue-100">
+                <div class="text-center mb-6">
+                    <span class="bg-blue-100 text-blue-800 px-4 py-1 rounded-full text-xs font-bold uppercase inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 11l9-7 9 7"></path>
+                            <path d="M5 10v9h14v-9"></path>
+                        </svg>
+                        Orquestador de Pagos
+                    </span>
+                    <h2 class="text-2xl font-black text-gray-900 mt-2 inline-flex items-center justify-center gap-2">
+                        <svg class="w-6 h-6 text-blue-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="6" width="18" height="12" rx="2"></rect>
+                            <path d="M3 10h18"></path>
+                            <path d="M7 14h4"></path>
+                        </svg>
+                        Pago de Servicios Públicos
+                    </h2>
+                </div>
+                <div class="space-y-4">
+                    <label class="text-xs font-semibold text-slate-500">tipoServicio</label>
+                    <select id="pago-servicio" class="w-full border-2 p-3 rounded-lg font-bold">
+                        <option value="UNIVERSIDAD">Universidad (Carné)</option>
+                        <option value="LUZ">Energía Eléctrica (Contador)</option>
+                        <option value="TELEFONO">Telefonía (Número)</option>
+                    </select>
+                    <label class="text-xs font-semibold text-slate-500">identificador</label>
+                    <input type="text" id="pago-id" placeholder="Identificador del servicio" class="w-full border-2 p-3 rounded-lg focus:border-blue-500 outline-none">
+                    <label class="text-xs font-semibold text-slate-500">monto</label>
+                    <input type="number" id="pago-monto" placeholder="Monto total a pagar Q" class="w-full border-2 p-3 rounded-lg font-bold text-xl text-blue-700">
+                    
+                    <div id="calculo-95-5" class="bg-blue-50 p-4 rounded-lg hidden">
+                        <div class="flex justify-between text-sm"><span>Transferencia Empresa (95%):</span> <span id="val-95" class="font-bold">Q 0.00</span></div>
+                        <div class="flex justify-between text-sm text-blue-600"><span>Comisión Banco (5%):</span> <span id="val-5" class="font-bold">Q 0.00</span></div>
+                    </div>
+
+                    <button onclick="ejecutarPago()" class="w-full bg-blue-900 text-white p-4 rounded-lg font-bold text-lg hover:bg-blue-800 transition shadow-lg">Confirmar Pago en Línea</button>
+                </div>
+                <div class="mt-5 text-xs text-slate-500">
+                    Endpoints: <span class="font-semibold text-slate-700">POST</span> /api/Pagos/validar • <span class="font-semibold text-slate-700">POST</span> /api/Pagos/ejecutar • <span class="font-semibold text-slate-700">GET</span> /api/Pagos/consultar-deuda/{tipoServicio}/{identificador}
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-10" data-role="admin">
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+                    <h2 class="text-lg font-bold text-slate-900 inline-flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3v18"></path>
+                            <path d="M4 8h8"></path>
+                            <path d="M4 12h8"></path>
+                            <path d="M4 16h8"></path>
+                            <path d="M16 8h4"></path>
+                            <path d="M16 12h4"></path>
+                            <path d="M16 16h4"></path>
+                        </svg>
+                        Centro de Control Operacional
+                    </h2>
+                    <span class="text-xs font-semibold uppercase tracking-widest text-slate-500">Monitoreo Ejecutivo</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Disponibilidad</p>
+                        <div class="mt-3 flex items-end justify-between">
+                            <span class="text-2xl font-bold text-slate-700">--</span>
+                            <span class="text-xs text-slate-500">SLA mensual</span>
+                        </div>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Latencia promedio</p>
+                        <div class="mt-3 flex items-end justify-between">
+                            <span class="text-2xl font-bold text-slate-700">--</span>
+                            <span class="text-xs text-slate-500">Ultima hora</span>
+                        </div>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Operaciones hoy</p>
+                        <div class="mt-3 flex items-end justify-between">
+                            <span class="text-2xl font-bold text-slate-700">--</span>
+                            <span class="text-xs text-slate-500">Variación: --</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Saldo agregado</p>
+                        <div class="mt-3 flex items-end justify-between">
+                            <span class="text-2xl font-bold text-slate-700">Q --</span>
+                            <span class="text-xs text-slate-500">Mes en curso</span>
+                        </div>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Transacciones fallidas</p>
+                        <div class="mt-3 flex items-end justify-between">
+                            <span class="text-2xl font-bold text-slate-700">--</span>
+                            <span class="text-xs text-slate-500">Ultimas 24h</span>
+                        </div>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Tiempo medio</p>
+                        <div class="mt-3 flex items-end justify-between">
+                            <span class="text-2xl font-bold text-slate-700">--</span>
+                            <span class="text-xs text-slate-500">Operaciones core</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Alertas de cumplimiento</p>
+                        <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                            <li class="flex items-center justify-between">
+                                <span>Monitoreo AML: revision automatica</span>
+                                <span class="text-slate-500 font-semibold">N/D</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>Reporte KYC pendiente</span>
+                                <span class="text-slate-500 font-semibold">N/D</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>Limites de retiro nocturno</span>
+                                <span class="text-slate-500 font-semibold">N/D</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Ultimos hitos</p>
+                        <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                            <li class="flex items-center justify-between">
+                                <span>Actualizacion de reglas de riesgo</span>
+                                <span class="text-xs text-slate-500">--</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>Activacion de cuentas masivas</span>
+                                <span class="text-xs text-slate-500">--</span>
+                            </li>
+                            <li class="flex items-center justify-between">
+                                <span>Validacion de pagos de servicios</span>
+                                <span class="text-xs text-slate-500">--</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Estado por servicio</p>
+                        <div class="mt-3 space-y-3 text-sm text-slate-700">
+                            <div class="flex items-center justify-between">
+                                <span>Operaciones Core</span>
+                                <span class="inline-flex items-center gap-2">
+                                    <span class="status-dot status-warn"></span>
+                                    N/D
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>Pagos de Servicios</span>
+                                <span class="inline-flex items-center gap-2">
+                                    <span class="status-dot status-warn"></span>
+                                    N/D
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>Bitacora</span>
+                                <span class="inline-flex items-center gap-2">
+                                    <span class="status-dot status-warn"></span>
+                                    N/D
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>Validacion KYC</span>
+                                <span class="inline-flex items-center gap-2">
+                                    <span class="status-dot status-warn"></span>
+                                    N/D
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Volumen diario</p>
+                        <div class="mt-4 bar-chart">
+                            <div class="bar" style="--level: 0%;"><span>L</span></div>
+                            <div class="bar" style="--level: 0%;"><span>M</span></div>
+                            <div class="bar" style="--level: 0%;"><span>X</span></div>
+                            <div class="bar" style="--level: 0%;"><span>J</span></div>
+                            <div class="bar" style="--level: 0%;"><span>V</span></div>
+                            <div class="bar" style="--level: 0%;"><span>S</span></div>
+                            <div class="bar" style="--level: 0%;"><span>D</span></div>
+                        </div>
+                        <p class="mt-3 text-xs text-slate-500">Transacciones procesadas por dia (semana actual).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
