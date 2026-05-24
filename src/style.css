@@ -1,5 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;600;700;800&family=Playfair+Display:wght@600;700&display=swap");
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
 	--blue-950: #0a1b3f;
 	--blue-900: #0f2b6b;
@@ -213,4 +217,13 @@ button:active {
 	header nav button {
 		letter-spacing: 0.04em;
 	}
+}
+
+/* Ocultar barra de desplazamiento manteniendo la funcionalidad */
+.scrollbar-none {
+	-ms-overflow-style: none;  /* IE y Edge */
+	scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+	display: none;  /* Chrome, Safari y Opera */
 }
