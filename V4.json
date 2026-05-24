@@ -1,0 +1,708 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "API_Banco | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://bancocentroamericano.azurewebsites.net/"
+    }
+  ],
+  "paths": {
+    "/api/Auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Bitacora/kardex/{idCuenta}": {
+      "get": {
+        "tags": [
+          "Bitacora"
+        ],
+        "parameters": [
+          {
+            "name": "idCuenta",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Cuentahabientes/perfil": {
+      "post": {
+        "tags": [
+          "Cuentahabientes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearCuentahabienteDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearCuentahabienteDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearCuentahabienteDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Cuentahabientes/tarjeta": {
+      "post": {
+        "tags": [
+          "Cuentahabientes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsociarTarjetaDebitoDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsociarTarjetaDebitoDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsociarTarjetaDebitoDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/diagnostico/integraciones": {
+      "get": {
+        "tags": [
+          "Diagnostico"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Operaciones/deposito": {
+      "post": {
+        "tags": [
+          "Operaciones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepositoDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepositoDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepositoDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Operaciones/retiro": {
+      "post": {
+        "tags": [
+          "Operaciones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetiroDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetiroDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetiroDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Operaciones/saldo/{idCuenta}": {
+      "get": {
+        "tags": [
+          "Operaciones"
+        ],
+        "parameters": [
+          {
+            "name": "idCuenta",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Operaciones/activar-cuenta": {
+      "post": {
+        "tags": [
+          "Operaciones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivarCuentaRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivarCuentaRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivarCuentaRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Operaciones/transferir": {
+      "post": {
+        "tags": [
+          "Operaciones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferirRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferirRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferirRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Pagos/validar": {
+      "post": {
+        "tags": [
+          "Pagos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidacionIdentificadorDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidacionIdentificadorDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidacionIdentificadorDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Pagos/ejecutar": {
+      "post": {
+        "tags": [
+          "Pagos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PagoServicioDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PagoServicioDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PagoServicioDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Pagos/consultar-deuda/{tipoServicio}/{identificador}": {
+      "get": {
+        "tags": [
+          "Pagos"
+        ],
+        "parameters": [
+          {
+            "name": "tipoServicio",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "identificador",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActivarCuentaRequestDto": {
+        "required": [
+          "idCuenta",
+          "montoDeposito"
+        ],
+        "type": "object",
+        "properties": {
+          "idCuenta": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "montoDeposito": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "AsociarTarjetaDebitoDto": {
+        "required": [
+          "idCuenta"
+        ],
+        "type": "object",
+        "properties": {
+          "idCuenta": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "Asociación de una tarjeta de débito a una cuenta existente del cuentahabiente."
+      },
+      "CrearCuentahabienteDto": {
+        "required": [
+          "dpi",
+          "nit",
+          "nombre",
+          "apellido",
+          "telefono",
+          "email",
+          "idTipoCuenta"
+        ],
+        "type": "object",
+        "properties": {
+          "dpi": {
+            "type": "string"
+          },
+          "nit": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "apellido": {
+            "type": "string"
+          },
+          "telefono": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "idTipoCuenta": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "Datos para registrar el perfil de un cuentahabiente (persona natural)."
+      },
+      "DepositoDto": {
+        "required": [
+          "idCuenta",
+          "monto",
+          "referencia"
+        ],
+        "type": "object",
+        "properties": {
+          "idCuenta": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "monto": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "referencia": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Abono a una cuenta existente."
+      },
+      "LoginRequest": {
+        "required": [
+          "credencial",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "credencial": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "PagoServicioDto": {
+        "required": [
+          "numeroTarjeta",
+          "pin",
+          "tipoServicio",
+          "identificador",
+          "monto",
+          "referenciaCliente"
+        ],
+        "type": "object",
+        "properties": {
+          "numeroTarjeta": {
+            "type": "string"
+          },
+          "pin": {
+            "type": "string"
+          },
+          "tipoServicio": {
+            "$ref": "#/components/schemas/TipoServicioPublico"
+          },
+          "identificador": {
+            "type": "string"
+          },
+          "monto": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "referenciaCliente": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Pago de servicios públicos/privados desde la cuenta del cuentahabiente aplicando la regla 95/5."
+      },
+      "RetiroDto": {
+        "required": [
+          "idCuenta",
+          "monto",
+          "referencia"
+        ],
+        "type": "object",
+        "properties": {
+          "idCuenta": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "monto": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "referencia": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Retiro de fondos validando disponibilidad de saldo en tiempo real."
+      },
+      "TipoServicioPublico": {
+        "type": "integer",
+        "description": "Empresa receptora del pago y tipo de identificador único exigido en la orquestación."
+      },
+      "TransferirRequestDto": {
+        "required": [
+          "idCuentaOrigen",
+          "idCuentaDestino",
+          "monto",
+          "descripcion"
+        ],
+        "type": "object",
+        "properties": {
+          "idCuentaOrigen": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "idCuentaDestino": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "monto": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "descripcion": {
+            "type": "string"
+          }
+        }
+      },
+      "ValidacionIdentificadorDto": {
+        "required": [
+          "tipoServicio",
+          "identificador"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoServicio": {
+            "$ref": "#/components/schemas/TipoServicioPublico"
+          },
+          "identificador": {
+            "type": "string"
+          }
+        },
+        "description": "Entrada para validar un identificador ante la empresa correspondiente sin ejecutar cobro."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Bitacora"
+    },
+    {
+      "name": "Cuentahabientes"
+    },
+    {
+      "name": "Diagnostico"
+    },
+    {
+      "name": "Operaciones"
+    },
+    {
+      "name": "Pagos"
+    }
+  ]
+}
