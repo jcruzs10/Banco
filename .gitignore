@@ -85,3 +85,6 @@ dist-ssr/
 
 # Varnish TSV files
 *.varnish
+*.json
+
+V4.json

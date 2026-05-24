@@ -1,38 +1,149 @@
 import { BancoAPI } from './api.js';
 import * as UI from './ui.js';
 
-// --- CONFIGURACIÓN DE ESTADO GLOBAL ---
+// --- MAPEO DE RUTAS Y ROLES REQUERIDOS ---
+const ROUTES = {
+  'login': { role: 'guest' },
+  'cuenta': { role: 'usuario' },
+  'movimientos': { role: 'usuario' },
+  'operaciones': { role: 'usuario' },
+  'pagos': { role: 'usuario' },
+  'clientes': { role: 'admin' },
+  'aprobaciones': { role: 'admin' },
+  'bitacora': { role: 'admin' }
+};
+
+// --- CONFIGURACIÓN DE ESTADO GLOBAL SEGURO EN MEMORIA ---
 let state = {
-  role: 'usuario', // 'usuario' | 'admin'
+  role: 'usuario', 
   activeUser: null,
   activeAccount: null
 };
 
-// --- FUNCIÓN DE INICIALIZACIÓN ---
+// --- COMPROBACIÓN DE ADULTERACIÓN DE SESIÓN (ANTI-TAMPERING) ---
+function checkSessionIntegrity() {
+  const localCred = localStorage.getItem('credencial');
+  
+  // Si en memoria figura logueado pero en localStorage la credencial cambió o se borró
+  if (state.activeUser && localCred !== state.activeUser) {
+    console.warn('¡Adulteración de sesión detectada!');
+    forzarLogout('¡Alerta de Seguridad! Se ha detectado una modificación no autorizada de la sesión. Sesión cerrada.');
+    return true;
+  }
+  
+  // Si en memoria figura deslogueado pero en localStorage agregaron credenciales fraudulentas
+  if (!state.activeUser && localCred) {
+    console.warn('¡Intento de sesión fraudulenta detectado!');
+    forzarLogout(null);
+    return true;
+  }
+  
+  return false;
+}
+
+// Cierre de sesión forzado e inmediato
+function forzarLogout(mensaje) {
+  BancoAPI.logout();
+  state.activeUser = null;
+  state.role = 'usuario';
+  state.activeAccount = null;
+
+  document.getElementById('header-user-badge').textContent = 'Visitante';
+  UI.showLoginScreen();
+  window.location.hash = '#/login';
+  
+  if (mensaje) {
+    UI.showToast(mensaje, 'error');
+  }
+}
+
+// --- ENRUTADOR REACTIVO (ROUTER) CON GUARDIAS DE ACCESO ---
+function handleRouting() {
+  // Validar si alteraron el localStorage antes de proceder
+  if (checkSessionIntegrity()) {
+    return;
+  }
+
+  const hash = window.location.hash || '';
+  let route = hash.replace('#/', '').trim();
+
+  // Si no hay hash en la URL, asignar la ruta predeterminada según el estado actual
+  if (!route) {
+    if (state.activeUser) {
+      route = state.role === 'admin' ? 'clientes' : 'cuenta';
+    } else {
+      route = 'login';
+    }
+    window.location.hash = `#/${route}`;
+    return;
+  }
+
+  // Redirigir a rutas por defecto si ingresa a una ruta no mapeada
+  if (!ROUTES[route]) {
+    route = state.activeUser ? (state.role === 'admin' ? 'clientes' : 'cuenta') : 'login';
+    window.location.hash = `#/${route}`;
+    return;
+  }
+
+  // Guardias para el Login (Ruta Guest)
+  if (ROUTES[route].role === 'guest') {
+    if (state.activeUser) {
+      const defaultTab = state.role === 'admin' ? 'clientes' : 'cuenta';
+      window.location.hash = `#/${defaultTab}`;
+      return;
+    }
+    UI.showLoginScreen();
+    return;
+  }
+
+  // Guardias para páginas autenticadas
+  if (!state.activeUser) {
+    UI.showToast('Acceso restringido: Por favor, inicie sesión.', 'error');
+    window.location.hash = '#/login';
+    return;
+  }
+
+  // Guardia de administrador
+  if (ROUTES[route].role === 'admin' && state.role !== 'admin') {
+    UI.showToast('Acceso no autorizado: requiere permisos de Administrador.', 'error');
+    window.location.hash = '#/cuenta';
+    return;
+  }
+
+  // Guardia de usuario normal (clientes)
+  if (ROUTES[route].role === 'usuario' && state.role !== 'usuario') {
+    UI.showToast('Acceso no autorizado: los administradores no operan cuentas de clientes.', 'error');
+    window.location.hash = '#/clientes';
+    return;
+  }
+
+  // Si todo es válido, mostrar la pestaña de forma segura
+  UI.hideLoginScreen();
+  UI.switchTab(route);
+}
+
+// --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
-  // Inicializar comisiones en vivo del orquestador de pagos
   UI.setupLiveComision();
   
-  // Registrar Listeners de Navegación de pestañas (Tabs)
+  // Configurar listeners de clicks en los botones de navegación
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const tabId = e.currentTarget.dataset.tab;
-      UI.switchTab(tabId);
+      window.location.hash = `#/${tabId}`;
     });
   });
 
-  // Validar si existe sesión activa guardada
+  // Validar si existe sesión previa
   const savedUser = localStorage.getItem('credencial');
   if (savedUser) {
     state.activeUser = savedUser;
     state.role = savedUser === 'admin' ? 'admin' : 'usuario';
     
-    // Configurar interfaz para la sesión recuperada
     UI.hideLoginScreen();
     UI.setupTabs(state.role);
-    document.getElementById('header-user-badge').textContent = savedUser === 'admin' ? 'Administrador Core' : `Usuario: ${savedUser}`;
+    document.getElementById('header-user-badge').textContent = state.role === 'admin' ? 'Administrador Core' : `Usuario: ${savedUser}`;
     
-    // Si es admin, cargar diagnósticos iniciales
     if (state.role === 'admin') {
       cargarDiagnosticoCore();
     }
@@ -40,9 +151,20 @@ document.addEventListener('DOMContentLoaded', () => {
     UI.showLoginScreen();
   }
 
-  // --- REGISTRO DE FORMULARIOS ---
+  // Escuchar cambios de hash en la URL
+  window.addEventListener('hashchange', handleRouting);
+  
+  // Ejecutar el enrutamiento inicial
+  handleRouting();
 
-  // 1. Formulario de Inicio de Sesión
+  // Encender monitoreo constante contra manipulación en DevTools (cada 1.5 segundos)
+  setInterval(() => {
+    checkSessionIntegrity();
+  }, 1500);
+
+  // --- OYENTES DE EVENTOS DE FORMULARIOS ---
+
+  // Login
   document.getElementById('form-login')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const credencial = document.getElementById('login-credencial').value.trim();
@@ -50,10 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     UI.showLoader();
     try {
-      // Intentar login contra la API
       await BancoAPI.login(credencial, password);
 
-      // Si no falla, establecemos el rol
+      // Sincronizar estado seguro en memoria
       state.activeUser = credencial;
       state.role = credencial === 'admin' ? 'admin' : 'usuario';
 
@@ -62,6 +183,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('header-user-badge').textContent = state.role === 'admin' ? 'Administrador Core' : `Usuario: ${credencial}`;
       
       UI.showToast(`Bienvenido al sistema transaccional, ${credencial}`, 'success');
+
+      // Redirigir a la pestaña inicial por rol usando hash
+      const defaultRoute = state.role === 'admin' ? 'clientes' : 'cuenta';
+      window.location.hash = `#/${defaultRoute}`;
 
       if (state.role === 'admin') {
         cargarDiagnosticoCore();
@@ -73,31 +198,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 2. Cerrar Sesión (Logout)
+  // Logout
   document.getElementById('btn-logout')?.addEventListener('click', () => {
-    BancoAPI.logout();
-    state.activeUser = null;
-    state.role = 'usuario';
-    state.activeAccount = null;
-
-    // Reiniciar UI
-    document.getElementById('header-user-badge').textContent = 'Visitante';
-    UI.showLoginScreen();
-    UI.showToast('Sesión cerrada correctamente.', 'info');
+    forzarLogout('Sesión cerrada correctamente.');
   });
 
-  // --- FLUJO DE USUARIO ---
-
-  // 3. Consultar Saldo de Cuenta
+  // Consultar Saldo (Usuario)
   document.getElementById('form-consulta-cuenta')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (checkSessionIntegrity()) return;
+    
     const idCuenta = document.getElementById('consulta-cuenta-id').value;
     
     UI.showLoader();
     try {
       const data = await BancoAPI.obtenerSaldo(idCuenta);
-      
-      // La API puede retornar el saldo directamente como número o un objeto JSON
       const saldo = typeof data === 'object' ? (data.saldo ?? data.monto ?? 0) : parseFloat(data);
       
       state.activeAccount = idCuenta;
@@ -110,9 +225,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 4. Filtrar Movimientos (Kardex)
+  // Filtrar Movimientos / Kardex (Usuario)
   document.getElementById('form-filtro-movimientos')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (checkSessionIntegrity()) return;
+
     const idCuenta = document.getElementById('filtro-cuenta-id').value;
     const desde = document.getElementById('filtro-fecha-desde').value || null;
     const hasta = document.getElementById('filtro-fecha-hasta').value || null;
@@ -129,8 +246,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 5. Depósitos y Retiros
+  // Depósito (Usuario)
   document.getElementById('btn-deposito')?.addEventListener('click', async () => {
+    if (checkSessionIntegrity()) return;
+
     const idCuenta = document.getElementById('op-cuenta').value;
     const monto = document.getElementById('op-monto').value;
     const referencia = document.getElementById('op-referencia').value;
@@ -144,12 +263,10 @@ document.addEventListener('DOMContentLoaded', () => {
       await BancoAPI.deposito(idCuenta, monto, referencia);
       UI.showToast(`Depósito de Q ${parseFloat(monto).toFixed(2)} realizado con éxito.`, 'success');
       
-      // Si depositamos en la cuenta actualmente consultada en pestaña Cuenta, refrescar saldo
       if (state.activeAccount && state.activeAccount === idCuenta) {
         refrescarSaldoActivo();
       }
       
-      // Limpiar formulario
       document.getElementById('form-deposito-retiro').reset();
     } catch (error) {
       UI.showToast(`Fallo en el depósito: ${error.message}`, 'error');
@@ -158,7 +275,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Retiro (Usuario)
   document.getElementById('btn-retiro')?.addEventListener('click', async () => {
+    if (checkSessionIntegrity()) return;
+
     const idCuenta = document.getElementById('op-cuenta').value;
     const monto = document.getElementById('op-monto').value;
     const referencia = document.getElementById('op-referencia').value;
@@ -172,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
       await BancoAPI.retiro(idCuenta, monto, referencia);
       UI.showToast(`Retiro de Q ${parseFloat(monto).toFixed(2)} debitado correctamente.`, 'success');
       
-      // Si retiramos de la cuenta actualmente consultada, refrescar saldo
       if (state.activeAccount && state.activeAccount === idCuenta) {
         refrescarSaldoActivo();
       }
@@ -185,9 +304,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 6. Transferencias ACH
+  // Transferencia ACH (Usuario)
   document.getElementById('form-transferencia')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (checkSessionIntegrity()) return;
+
     const origen = document.getElementById('trans-origen').value;
     const destino = document.getElementById('trans-destino').value;
     const monto = document.getElementById('trans-monto').value;
@@ -198,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
       await BancoAPI.transferir(origen, destino, monto, descripcion);
       UI.showToast(`Transferencia de Q ${parseFloat(monto).toFixed(2)} completada con éxito.`, 'success');
       
-      // Refrescar saldo si aplica
       if (state.activeAccount && (state.activeAccount === origen || state.activeAccount === destino)) {
         refrescarSaldoActivo();
       }
@@ -211,8 +331,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 7. Pagos: Consultar Deuda de Servicio
+  // Pagos: Consultar Deuda (Usuario)
   document.getElementById('btn-consultar-deuda')?.addEventListener('click', async () => {
+    if (checkSessionIntegrity()) return;
+
     const tipoServicio = document.getElementById('pago-servicio').value;
     const identificador = document.getElementById('pago-id').value.trim();
 
@@ -223,20 +345,15 @@ document.addEventListener('DOMContentLoaded', () => {
     UI.showLoader();
     try {
       const data = await BancoAPI.consultarDeuda(tipoServicio, identificador);
-      
-      // Si la API devuelve un monto de deuda
       const montoDeuda = typeof data === 'object' ? (data.monto || data.deuda || 0) : parseFloat(data);
       
       const montoInput = document.getElementById('pago-monto');
       if (montoInput) {
         montoInput.value = montoDeuda;
-        // Lanzar evento input para actualizar cálculos automáticos del 95/5
         montoInput.dispatchEvent(new Event('input'));
       }
       
       UI.showToast(`Deuda de Q ${parseFloat(montoDeuda).toFixed(2)} cargada del sistema externo.`, 'success');
-      
-      // Mostrar la sección de ejecución de pago
       document.getElementById('form-ejecutar-pago').classList.remove('hidden');
     } catch (error) {
       UI.showToast(`No se pudo obtener la deuda: ${error.message}`, 'error');
@@ -245,9 +362,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 8. Pagos: Validar Conexión de Identificador
+  // Pagos: Validar Identificador (Usuario)
   document.getElementById('form-validar-servicio')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (checkSessionIntegrity()) return;
+
     const tipoServicio = document.getElementById('pago-servicio').value;
     const identificador = document.getElementById('pago-id').value.trim();
 
@@ -255,8 +374,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await BancoAPI.validarPago(tipoServicio, identificador);
       UI.showToast('Identificador de cliente validado y listo para cobrar.', 'success');
-      
-      // Mostrar la sección de autorización
       document.getElementById('form-ejecutar-pago').classList.remove('hidden');
     } catch (error) {
       UI.showToast(`Error de validación del servicio: ${error.message}`, 'error');
@@ -265,9 +382,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 9. Pagos: Ejecutar Liquidación del Pago
+  // Pagos: Ejecutar Liquidación (Usuario)
   document.getElementById('form-ejecutar-pago')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (checkSessionIntegrity()) return;
+
     const tipoServicio = document.getElementById('pago-servicio').value;
     const identificador = document.getElementById('pago-id').value.trim();
     const monto = document.getElementById('pago-monto').value;
@@ -280,7 +399,6 @@ document.addEventListener('DOMContentLoaded', () => {
       await BancoAPI.ejecutarPago(tarjeta, pin, tipoServicio, identificador, monto, referenciaCliente);
       UI.showToast(`Pago orquestado con éxito. Q ${parseFloat(monto).toFixed(2)} liquidado bajo la regla 95/5.`, 'success');
       
-      // Limpiar y resetear
       document.getElementById('form-validar-servicio').reset();
       document.getElementById('form-ejecutar-pago').reset();
       document.getElementById('form-ejecutar-pago').classList.add('hidden');
@@ -292,12 +410,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-
-  // --- FLUJO DE ADMINISTRADOR ---
-
-  // 10. Registrar Cuentahabiente
+  // Registrar Cuentahabiente (Admin)
   document.getElementById('form-cuentahabiente')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (checkSessionIntegrity()) return;
+
     const dpi = document.getElementById('cte-dpi').value.trim();
     const nit = document.getElementById('cte-nit').value.trim();
     const nombre = document.getElementById('cte-nombre').value.trim();
@@ -310,7 +427,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await BancoAPI.crearCuentahabiente(dpi, nit, nombre, apellido, telefono, email, idTipoCuenta);
       
-      // Intentar extraer información de la cuenta creada en la respuesta
       let msg = 'Perfil de cuentahabiente registrado con éxito en el core.';
       if (res && res.idCuenta) {
         msg += ` ID Cuenta generada: #${res.idCuenta}`;
@@ -327,9 +443,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 11. Asociar Tarjeta de Débito
+  // Asociar Tarjeta (Admin)
   document.getElementById('form-asociar-tarjeta')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (checkSessionIntegrity()) return;
+
     const idCuenta = document.getElementById('tarjeta-cuenta-id').value;
 
     UI.showLoader();
@@ -350,9 +468,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 12. Activar Cuenta
+  // Activar Cuenta (Admin)
   document.getElementById('form-activar-cuenta')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (checkSessionIntegrity()) return;
+
     const idCuenta = document.getElementById('activar-cuenta-id').value;
     const monto = document.getElementById('activar-cuenta-monto').value;
 
@@ -361,7 +481,6 @@ document.addEventListener('DOMContentLoaded', () => {
       await BancoAPI.activarCuenta(idCuenta, monto);
       UI.showToast(`Cuenta #${idCuenta} activada satisfactoriamente con depósito inicial.`, 'success');
       
-      // Refrescar saldo si aplica
       if (state.activeAccount && state.activeAccount === idCuenta) {
         refrescarSaldoActivo();
       }
@@ -374,9 +493,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 13. Consultar Auditoría Global (Bitácora Admin)
+  // Consultar Auditoría / Bitácora (Admin)
   document.getElementById('form-bitacora-admin')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (checkSessionIntegrity()) return;
+
     const idCuenta = document.getElementById('bitacora-cuenta-id').value;
 
     UI.showLoader();
@@ -391,13 +512,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 14. Actualizar Diagnóstico de Integraciones
-  document.getElementById('btn-actualizar-diagnostico')?.addEventListener('click', cargarDiagnosticoCore);
+  // Actualizar Diagnóstico de Integraciones
+  document.getElementById('btn-actualizar-diagnostico')?.addEventListener('click', () => {
+    if (!checkSessionIntegrity()) {
+      cargarDiagnosticoCore();
+    }
+  });
 });
 
 // --- FUNCIONES AUXILIARES DE SOPORTE ---
-
-// Refrescar saldo del estado activo
 async function refrescarSaldoActivo() {
   if (!state.activeAccount) return;
   try {
@@ -409,7 +532,6 @@ async function refrescarSaldoActivo() {
   }
 }
 
-// Cargar diagnóstico de integraciones desde el API core
 async function cargarDiagnosticoCore() {
   const label = document.getElementById('diagnostico-status-integracion');
   if (label) {

@@ -80,10 +80,6 @@ export function setupTabs(currentRole) {
     adminHeader?.classList.add('hidden');
     diagPanel?.classList.add('hidden');
   }
-
-  // Establecer pestaña predeterminada según el rol
-  const defaultTab = currentRole === 'admin' ? 'clientes' : 'cuenta';
-  switchTab(defaultTab);
 }
 
 export function switchTab(tabId) {
